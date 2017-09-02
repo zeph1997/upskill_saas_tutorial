@@ -11,6 +11,7 @@ $(document).on('turbolinks:load',function(){
     submitBtn.click(function(event){
         //prevent default submission behavior
         event.preventDefault();
+        submitBtn.val("Processing").prop('disabled',true);
         
         //collect the credit card fields
         var ccNum = $('#card_number').val(); 
@@ -18,21 +19,52 @@ $(document).on('turbolinks:load',function(){
         var expMonth = $('#card_month').val();
         var expYear = $('#card_year').val();
         
-        //send the card information to stripe
-        Stripe.createToken({
+        //Use stripe js library to check for card errors
+        var error = false;
+        
+        //Validate card number
+        if (!Stripe.card.validateCardNumber(ccNum)) {
+            error = true;
+            alert('The credit card number appears to be invalid');
+        }
+        
+        //Validate CVC number
+        if (!Stripe.card.validateCVC(cvvNum)) {
+            error = true;
+            alert('The cvc number appears to be invalid');
+        }
+        
+        //Validate expiration date
+        if (!Stripe.card.validateExpiry(expMonth,expYear)) {
+            error = true;
+            alert('The expiration date appears to be invalid');
+        }
+        
+        if (error){
+            //if there are card errors, dont send to stripe
+            submitBtn.prop('disabled',false).val("Sign Up");
+        } 
+        else {
+            //send the card information to stripe
+            Stripe.createToken({
             number: ccNum,
             cvc: cvvNum,
             exp_month: expMonth,
             exp_year: expYear
-        }, stripeResponseHandler);
-        
+            }, stripeResponseHandler);
+        }
+        return false;
     });
     
-    
-    
     //stripe will return a card token
-    //inject card token as hidden field into form
-    //submit form to our rails app
-
-    
-})
+    function stripeResponseHandler(status, response){
+        //Get token from response
+        var token = response.id;
+        
+        //inject card token as hidden field into form
+        theForm.append( $('<input type="hidden" name="user[stripe_card_token]">').val(token));
+        
+        //submit form to our rails app
+        theForm.get(0).submit();
+    }
+});
