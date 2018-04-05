@@ -1,3 +1,4 @@
 # README
 
-[Upskill](http://upskillcourses.com) Software-as-a-Service Ruby on Rails App
+This is a tutorial lesson I did on web development using Ruby on Rails!
+The tutorial is by Upskill courses
